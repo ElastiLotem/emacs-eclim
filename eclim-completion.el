@@ -55,6 +55,7 @@
   (unwind-protect
       (setq eclim--completion-candidates
             (case major-mode
+              ((c++-mode c-mode) (eclim/c--completions))
               (java-mode
                (assoc-default 'completions
                               (eclim/execute-command "java_complete" "-p" "-f" "-e" ("-l" "standard") "-o")))
@@ -65,9 +66,7 @@
               (php-mode
                (eclim/execute-command "php_complete" "-p" "-f" "-e" "-o"))
               ((javascript-mode js-mode)
-               (eclim/execute-command "javascript_complete" "-p" "-f" "-e" "-o"))
-              ((c++-mode c-mode)
-               (eclim/execute-command "c_complete" "-p" "-f" "-e" ("-l" "standard") "-o"))))
+               (eclim/execute-command "javascript_complete" "-p" "-f" "-e" "-o"))))
     (setq eclim--is-completing nil)))
 
 (defun eclim--completion-candidates-filter (c)
@@ -80,6 +79,7 @@
   "Returns the part of the completion candidate to be displayed
 in a completion menu."
   (assoc-default (case major-mode
+                   ((c++-mode c-mode) 'info)
                    (java-mode 'info)
                    (t 'completion)) candidate))
 
@@ -92,7 +92,9 @@ in a completion menu."
 (defun eclim--basic-complete-internal (completion-list)
   "Displays a buffer of basic completions."
   (let* ((window (get-buffer-window "*Completions*" 0))
-         (c (eclim--java-identifier-at-point nil t))
+         (c (case major-mode
+              (java-mode (eclim--java-identifier-at-point nil t))
+              ((c++-mode c-mode) (eclim--c-identifier-at-point nil t))))
          (beg (car c))
          (word (cdr c))
          (compl (try-completion word
@@ -212,7 +214,7 @@ buffer."
 (defun eclim--completion-action ()
   (case major-mode
     ('java-mode (eclim--completion-action-java))
-    ((c-mode c++-mode) (eclim--completion-action-java))
+    ;((c-mode c++-mode) (eclim--completion-action-c))
     ('nxml-mode (eclim--completion-action-xml))
     (t (eclim--completion-action-default))))
 

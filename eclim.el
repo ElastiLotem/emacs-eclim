@@ -243,11 +243,21 @@ lists are then appended together."
        (not (or (string= cmd "project_by_resource")
                 (string= cmd "project_link_resource")))))
 
+(defun eclim/src-update (&optional save-others)
+  "If `eclim-auto-save' is non-nil, save the current buffer. In
+addition, if `save-others' is non-nil, also save any other unsaved buffer"
+  (when eclim-auto-save
+    (when (buffer-modified-p) (save-buffer)) ;; auto-save current buffer, prompt on saving others
+    (when save-others
+      (save-some-buffers
+       nil
+       (lambda () (eclim--project-dir buffer-file-name))))))
+
 (defun eclim--execute-command-internal (executor cmd args)
   (lexical-let* ((expargs (eclim--expand-args args))
                  (sync (eclim--command-should-sync-p cmd args))
                  (check (eclim--args-contains args '("-p"))))
-    (when sync (eclim/java-src-update))
+    (when sync (eclim/src-update))
     (when check
       (ignore-errors
         (eclim--check-project (if (listp check) (eval (second check)) (eclim--project-name)))))
@@ -379,7 +389,7 @@ FILENAME is given, return that file's  project name instead."
         (erase-buffer)
         (insert (concat "-*- mode: eclim-find; default-directory: " default-directory " -*-"))
         (newline 2)
-        (insert (concat "eclim java_search -p " pattern))
+        (insert (concat "search results " pattern))
         (newline)
         (loop for result across results
               do (insert (eclim--format-find-result result default-directory)))
@@ -536,7 +546,9 @@ the use of eclim to java and ant files."
         (eclim-mode 1))))
 
 (require 'eclim-project)
-(require 'eclim-java)
+;(require 'eclim-java)
+(require 'eclim-c)
+(require 'eclim-completion)
 (require 'eclim-ant)
 (require 'eclim-maven)
 (require 'eclim-problems)
