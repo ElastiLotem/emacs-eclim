@@ -31,6 +31,9 @@
 
 (define-key eclim-mode-map (kbd "C-c C-c s") 'eclim-c-method-signature-at-point)
 (define-key eclim-mode-map [f3] 'eclim-c-find-declaration)
+(define-key eclim-mode-map [(meta ?.)] 'eclim-c-find-declaration)
+(define-key eclim-mode-map [(control ?x) ?4 f3] 'eclim-c-find-declaration-other-window)
+(define-key eclim-mode-map [(control x) ?4 ?.] 'eclim-c-find-declaration-other-window)
 (define-key eclim-mode-map [(shift f3)] 'eclim-c-find-references)
 (define-key eclim-mode-map [(control f3)] 'eclim-c-call-hierarchy)
 (define-key eclim-mode-map (kbd "s-SPC") 'eclim-complete)
@@ -161,21 +164,6 @@ declaration has been found. TYPE may be either 'class',
 has been found."
   (eclim--c-current-type-name "\\(class\\)"))
 
-(defun eclim/c-classpath (project)
-  (eclim--check-project project)
-  (eclim--call-process "c_classpath" "-p" project))
-
-(defun eclim/c-classpath-variables ()
-  ;; TODO: fix trailing whitespaces
-  (mapcar (lambda (line)
-            (split-string line "-")) (eclim--call-process "c_classpath_variables")))
-
-(defun eclim/c-classpath-variable-create (name path)
-  (eclim--call-process "c_classpath_variable_create" "-n" name "-p" path))
-
-(defun eclim/c-classpath-variable-delete (name)
-  (eclim--call-process "c_classpath_variable_create" "-n" name))
-
 (defun eclim-c-format ()
   "Format the source code of the current c source file."
   (interactive)
@@ -285,6 +273,12 @@ has been found."
                                 eclim-c--ctx-switch-crap "CTX_SWITCH" info)))
                 (alist-edit-key 'info new-info completion))))
       (mapcar 'post-process-completion completions))))
+
+(defun eclim-c-find-declaration-other-window ()
+  "Find and display the declaration of the c identifier at point."
+  (interactive)
+  (let ((eclim--other-window t))
+    (eclim-c-find-declaration)))
 
 (defun eclim-c-find-declaration ()
   "Find and display the declaration of the c identifier at point."

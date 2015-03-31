@@ -114,6 +114,8 @@ in the current workspace."
 (defvar eclim--project-natures-cache nil)
 (defvar eclim--projects-cache nil)
 
+(defvar eclim--other-window nil)
+
 (defvar eclim--file-coding-system-mapping
   '(("undecided-dos" . "iso-8859-1")
     ("dos" . "iso-8859-1")
@@ -362,14 +364,23 @@ FILENAME is given, return that file's  project name instead."
       (or eclim--project-name
           (and buffer-file-name (setq eclim--project-name (get-project-name buffer-file-name)))))))
 
+(defun eclim-project-refresh ()
+  (interactive)
+  (eclim/project-refresh (eclim--project-name)))
+
+(defun eclim--find-file-internal (path-to-file)
+  (if eclim--other-window
+      (find-file-other-window path-to-file)
+    (find-file path-to-file)))
+
 (defun eclim--find-file (path-to-file)
   (if (not (string-match-p "!" path-to-file))
       (unless (and (buffer-file-name) (file-equal-p path-to-file (buffer-file-name)))
-        (find-file-other-window path-to-file))
+        (eclim--find-file-internal path-to-file))
     (let* ((parts (split-string path-to-file "!"))
            (archive-name (replace-regexp-in-string eclim--compressed-urls-regexp "" (first parts)))
            (file-name (second parts)))
-      (find-file-other-window archive-name)
+      (eclim--find-file-internal archive-name)
       (beginning-of-buffer)
       (re-search-forward (replace-regexp-in-string
                           eclim--compressed-file-path-removal-regexp ""
@@ -383,18 +394,22 @@ FILENAME is given, return that file's  project name instead."
 
 (defun eclim--find-display-results (pattern results &optional open-single-file)
   (let ((results (remove-if (lambda (result) (string-match (rx bol (or "jar" "zip") ":") (assoc-default 'filename result))) results)))
-    (if (and (= 1 (length results)) open-single-file) (eclim--visit-declaration (elt results 0))
-      (pop-to-buffer (get-buffer-create "*eclim: find"))
-      (let ((buffer-read-only nil))
-        (erase-buffer)
-        (insert (concat "-*- mode: eclim-find; default-directory: " default-directory " -*-"))
-        (newline 2)
-        (insert (concat "search results " pattern))
-        (newline)
-        (loop for result across results
-              do (insert (eclim--format-find-result result default-directory)))
-        (goto-char 0)
-        (grep-mode)))))
+    (cond
+     ((= 0 (length results)) nil)
+     ((and (= 1 (length results)) open-single-file) (eclim--visit-declaration (elt results 0)))
+     (t (progn
+          (eclim--visit-declaration (elt results 0))
+          (pop-to-buffer (get-buffer-create "*eclim: find"))
+          (let ((buffer-read-only nil))
+            (erase-buffer)
+            (insert (concat "-*- mode: eclim-find; default-directory: " default-directory " -*-"))
+            (newline 2)
+            (insert (concat "search results " pattern))
+            (newline)
+            (loop for result across results
+                  do (insert (eclim--format-find-result result default-directory)))
+            (goto-char 0)
+            (grep-mode)))))))
 
 (defun eclim--format-find-result (line &optional directory)
   (let ((converted-directory (replace-regexp-in-string "\\\\" "/" (assoc-default 'filename line))))
