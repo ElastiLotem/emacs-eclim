@@ -28,6 +28,7 @@
 ;;* Eclim C
 
 (require 'json)
+(require 'cl)
 
 (define-key eclim-mode-map (kbd "C-c C-c s") 'eclim-c-method-signature-at-point)
 (define-key eclim-mode-map [f3] 'eclim-c-find-declaration)
@@ -280,13 +281,28 @@ has been found."
   (let ((eclim--other-window t))
     (eclim-c-find-declaration)))
 
+(defun eclim-c--is-api-file-name (file-name)
+  (string-match-p "_api\\.h$" file-name))
+
+(defun eclim-c--is-api-match (match)
+  (eclim-c--is-api-file-name (assoc-default 'filename match)))
+
 (defun eclim-c-find-declaration ()
   "Find and display the declaration of the c identifier at point."
   (interactive)
   (let ((i (eclim--c-identifier-at-point t)))
-    (eclim/with-results hits ("c_search" "-n" "-f" ("-o" (car i)) ("-l" (length (cdr i))) ("-x" "declaration"))
-      (eclim--find-display-results
-       (cdr i) (remove-duplicates hits :test 'equal) t))))
+    (eclim/with-results hits
+      ("c_search" "-n" "-f"
+       ("-o" (car i))
+       ("-l" (length (cdr i)))
+       ("-x" "declaration"))
+      (let* ((results (remove-duplicates hits :test 'equal))
+             (non-api-results (cl-remove-if 'eclim-c--is-api-match results))
+             (api-results (cl-remove-if-not 'eclim-c--is-api-match results)))
+        (eclim--find-display-results
+         (cdr i)
+         (vconcat non-api-results api-results)
+         t)))))
 
 (defun eclim-c-find-references ()
   "Find and display references for the c identifier at point."
