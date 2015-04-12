@@ -392,24 +392,39 @@ FILENAME is given, return that file's  project name instead."
         (beginning-of-buffer)
         (kill-buffer old-buffer)))))
 
+(defun vector-move-some-to-end (pred vec)
+  (vconcat (cl-remove-if pred vec) (cl-remove-if-not pred vec)))
+
 (defun eclim--find-display-results (pattern results &optional open-single-file)
-  (let ((results (remove-if (lambda (result) (string-match (rx bol (or "jar" "zip") ":") (assoc-default 'filename result))) results)))
-    (cond
-     ((= 0 (length results)) nil)
-     ((and (= 1 (length results)) open-single-file) (eclim--visit-declaration (elt results 0)))
-     (t (progn
-          (eclim--visit-declaration (elt results 0))
-          (pop-to-buffer (get-buffer-create "*eclim: find"))
-          (let ((buffer-read-only nil))
-            (erase-buffer)
-            (insert (concat "-*- mode: eclim-find; default-directory: " default-directory " -*-"))
-            (newline 2)
-            (insert (concat "search results " pattern))
-            (newline)
-            (loop for result across results
-                  do (insert (eclim--format-find-result result default-directory)))
-            (goto-char 0)
-            (grep-mode)))))))
+  (let ((line-num (count-lines 1 (point))))
+    (flet ((same-file-and-line-num
+            (match)
+            (and (equal (assoc-default 'filename match) (buffer-file-name))
+                 (equal (assoc-default 'line match) line-num))))
+      (let ((results
+             (vector-move-some-to-end
+              'same-file-and-line-num
+              (remove-if
+               (lambda (result)
+                 (string-match (rx bol (or "jar" "zip") ":")
+                               (assoc-default 'filename result)))
+               results))))
+        (cond
+         ((= 0 (length results)) nil)
+         ((and (= 1 (length results)) open-single-file) (eclim--visit-declaration (elt results 0)))
+         (t (progn
+              (eclim--visit-declaration (elt results 0))
+              (set-buffer (get-buffer-create "*eclim: find"))
+              (let ((buffer-read-only nil))
+                (erase-buffer)
+                (insert (concat "-*- mode: eclim-find; default-directory: " default-directory " -*-"))
+                (newline 2)
+                (insert (concat "search results " pattern))
+                (newline)
+                (loop for result across results
+                      do (insert (eclim--format-find-result result default-directory)))
+                (goto-char 0)
+                (grep-mode)))))))))
 
 (defun eclim--format-find-result (line &optional directory)
   (let ((converted-directory (replace-regexp-in-string "\\\\" "/" (assoc-default 'filename line))))

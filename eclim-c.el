@@ -297,12 +297,10 @@ has been found."
        ("-l" (length (cdr i)))
        ("-x" "declaration"))
       (let* ((results (remove-duplicates hits :test 'equal))
-             (non-api-results (cl-remove-if 'eclim-c--is-api-match results))
-             (api-results (cl-remove-if-not 'eclim-c--is-api-match results)))
+             (reordered-results
+              (vector-move-some-to-end 'eclim-c--is-api-match results)))
         (eclim--find-display-results
-         (cdr i)
-         (vconcat non-api-results api-results)
-         t)))))
+         (cdr i) reordered-results t)))))
 
 (defun eclim-c-find-references ()
   "Find and display references for the c identifier at point."
