@@ -204,7 +204,7 @@
 
 (defun eclim/project-refresh (project)
   (eclim--check-project project)
-  (eclim--call-process "project_refresh" "-p" project))
+  (eclim--call-process-async (lambda (res) nil) "project_refresh" "-p" project))
 
 (defun eclim/project-refresh-file (project file)
   (eclim--check-project project)
