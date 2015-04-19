@@ -344,7 +344,7 @@ non-nill, IDENTIFIER will contain the whole identifier, not just
 the start. If argument POSITION is non-nil, BEG will contain the
 position of the identifier instead of the byte offset (which only
 matters for buffers containing non-ASCII characters)."
-  (let ((boundary "\\([-<>()\\[\\.\s\t\n!=,;]\\|]\\)"))
+  (let ((boundary "\\([-<>()\\[\\.\s\t\n&!=,;]\\|]\\)"))
     ;; TODO: make this work for dos buffers
     (save-excursion
       (if (and full (re-search-forward boundary nil t))
