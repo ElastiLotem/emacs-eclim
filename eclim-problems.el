@@ -135,10 +135,15 @@
   (interactive)
   (eclim--problems-apply-filter nil))
 
+(defun eclim--identifier-at-point (&optional full position)
+  (case major-mode
+    (java-mode (eclim--java-identifier-at-point full position))
+    ((c++-mode c-mode) (eclim--c-identifier-at-point full position))))
+
 (defun eclim--problems-insert-highlight (problem)
   (save-excursion
     (eclim--problem-goto-pos problem)
-    (let* ((id (eclim--java-identifier-at-point t t))
+    (let* ((id (eclim--identifier-at-point t t))
            (start (car id))
            (end (+ (car id) (length (cdr id)))))
       (let ((highlight (make-overlay start end (current-buffer) t t)))

@@ -30,6 +30,13 @@
 (require 'json)
 (require 'cl)
 
+(setq eclim-c--debug nil)
+
+(defun eclim-c--debug-message (x)
+  (if eclim-c--debug
+      (message (format "Eclim C debug: %s" x)))
+  x)
+
 (define-key eclim-mode-map (kbd "C-c C-c s") 'eclim-c-method-signature-at-point)
 (define-key eclim-mode-map [f3] 'eclim-c-find-declaration)
 (define-key eclim-mode-map [(meta ?.)] 'eclim-c-find-declaration)
@@ -344,7 +351,7 @@ non-nill, IDENTIFIER will contain the whole identifier, not just
 the start. If argument POSITION is non-nil, BEG will contain the
 position of the identifier instead of the byte offset (which only
 matters for buffers containing non-ASCII characters)."
-  (let ((boundary "\\([-<>()\\[\\.\s\t\n&!=,;]\\|]\\)"))
+  (let ((boundary "\\([-<>()\\[\\.\s\t\n&*~%^:!=,;]\\|]\\)"))
     ;; TODO: make this work for dos buffers
     (save-excursion
       (if (and full (re-search-forward boundary nil t))
@@ -354,7 +361,7 @@ matters for buffers containing non-ASCII characters)."
                      (if (re-search-backward boundary nil t) (forward-char))
                      (point))))
         (cons (if position (point) (eclim--byte-offset))
-              (buffer-substring-no-properties start end))))))
+              (eclim-c--debug-message (buffer-substring-no-properties start end)))))))
 
 (defun eclim--c-package-components (package)
   "Returns the components of a C package statement."

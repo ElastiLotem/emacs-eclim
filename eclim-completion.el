@@ -92,9 +92,7 @@ in a completion menu."
 (defun eclim--basic-complete-internal (completion-list)
   "Displays a buffer of basic completions."
   (let* ((window (get-buffer-window "*Completions*" 0))
-         (c (case major-mode
-              (java-mode (eclim--java-identifier-at-point nil t))
-              ((c++-mode c-mode) (eclim--c-identifier-at-point nil t))))
+         (c (eclim--identifier-at-point nil t))
          (beg (car c))
          (word (cdr c))
          (compl (try-completion word
