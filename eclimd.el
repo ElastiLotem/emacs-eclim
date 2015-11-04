@@ -70,7 +70,8 @@ You can freeze emacs until eclimd is ready to accept commands with this variable
   (if eclimd-executable
       (executable-find eclimd-executable)
     (let ((eclim-prog (executable-find eclim-executable)))
-      (expand-file-name "eclimd" (file-name-directory eclim-prog)))))
+      (if eclim-prog
+          (expand-file-name "eclimd" (file-name-directory eclim-prog))))))
 
 (defun eclimd--running-p ()
   (not (null (get-buffer-process eclimd-process-buffer))))
