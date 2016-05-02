@@ -303,7 +303,7 @@ has been found."
        ("-o" (car i))
        ("-l" (length (cdr i)))
        ("-x" "declaration"))
-      (let* ((results (remove-duplicates hits :test 'equal))
+      (let* ((results (reverse (remove-duplicates hits :test 'equal)))
              (reordered-results
               (vector-move-some-to-end 'eclim-c--is-api-match results)))
         (eclim--find-display-results
